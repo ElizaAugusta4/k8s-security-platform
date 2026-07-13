@@ -45,3 +45,23 @@ output "cluster_endpoint" {
 output "configure_kubectl" {
   value = "gcloud container clusters get-credentials ${module.gke.cluster_name} --region ${var.region} --project ${var.project_id}"
 }
+
+# Módulo KMS — para Auto Unseal do Vault
+module "vault_kms" {
+  source = "../../modules/vault-kms"
+
+  project_id   = var.project_id
+  region       = var.region
+  keyring_name = "vault-keyring"
+
+  depends_on = [module.gke]
+}
+
+# Outputs do KMS
+output "vault_crypto_key_id" {
+  value = module.vault_kms.crypto_key_id
+}
+
+output "vault_sa_email" {
+  value = module.vault_kms.vault_sa_email
+}
