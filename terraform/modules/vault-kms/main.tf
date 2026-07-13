@@ -33,6 +33,13 @@ resource "google_kms_crypto_key_iam_member" "vault_unseal" {
   member        = "serviceAccount:${google_service_account.vault.email}"
 }
 
+# Permissão para visualizar a chave (get) — necessária para o Vault verificar a existência
+resource "google_kms_crypto_key_iam_member" "vault_unseal_viewer" {
+  crypto_key_id = google_kms_crypto_key.vault_unseal.id
+  role          = "roles/cloudkms.viewer"
+  member        = "serviceAccount:${google_service_account.vault.email}"
+}
+
 # Workload Identity — liga o SA do Kubernetes ao SA do GCP
 # O pod do Vault usa o SA do K8s e o GCP reconhece como o SA do GCP
 resource "google_service_account_iam_member" "vault_workload_identity" {
