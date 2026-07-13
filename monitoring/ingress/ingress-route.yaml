@@ -65,3 +65,21 @@ spec:
       services:
         - name: traefik
           port: 80
+---
+# Vault
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`vault.elizaaugusta.uk`)
+      kind: Rule
+      services:
+        - name: vault
+          port: 8200
+  tls:
+    secretName: vault-tls
