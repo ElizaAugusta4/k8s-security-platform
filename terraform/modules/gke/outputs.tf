@@ -15,3 +15,7 @@ output "cluster_ca_certificate" {
 output "workload_identity_pool" {
   value = "${var.project_id}.svc.id.goog"
 }
+
+output "node_service_account" {
+  value = google_container_node_pool.nodes.node_config[0].service_account
+}
