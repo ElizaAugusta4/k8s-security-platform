@@ -1,7 +1,6 @@
 # Módulo VPC — cria a rede privada
 module "vpc" {
   source = "../../modules/vpc"
-
   project_id   = var.project_id
   region       = var.region
   network_name = "k8s-security-platform-vpc"
@@ -14,25 +13,20 @@ module "vpc" {
 # Módulo GKE — cria o cluster privado
 module "gke" {
   source = "../../modules/gke"
-
   project_id   = var.project_id
   region       = var.region
   cluster_name = "k8s-security-platform"
   network_name = module.vpc.network_name
   subnet_name  = module.vpc.subnet_name
-
   master_cidr         = "172.16.0.0/28"
   authorized_networks = var.authorized_networks
-
   node_count     = 1
   machine_type   = "e2-standard-2"
   use_spot_nodes = true
   environment    = "production"
-
   depends_on = [module.vpc]
 }
 
-# Outputs para uso posterior (ArgoCD, kubectl, etc.)
 output "cluster_name" {
   value = module.gke.cluster_name
 }
@@ -49,15 +43,12 @@ output "configure_kubectl" {
 # Módulo KMS — para Auto Unseal do Vault
 module "vault_kms" {
   source = "../../modules/vault-kms"
-
   project_id   = var.project_id
   region       = var.region
   keyring_name = "vault-keyring"
-
   depends_on = [module.gke]
 }
 
-# Outputs do KMS
 output "vault_crypto_key_id" {
   value = module.vault_kms.crypto_key_id
 }
@@ -66,28 +57,25 @@ output "vault_sa_email" {
   value = module.vault_kms.vault_sa_email
 }
 
-# Pega o número do projeto para construir o SA padrão dos nodes
+# Artifact Registry — armazena as imagens Docker do projeto
+resource "google_artifact_registry_repository" "secure_api" {
+  project       = var.project_id
+  location      = var.region
+  repository_id = "secure-api"
+  format        = "DOCKER"
+  description   = "Imagens Docker da secure-api"
+}
+
 data "google_project" "project" {
   project_id = var.project_id
 }
 
-# Permissão para os nodes do GKE baixarem as imagens
-# Nodes usam o SA padrão do Compute Engine
 resource "google_artifact_registry_repository_iam_member" "gke_pull" {
   project    = var.project_id
   location   = var.region
   repository = google_artifact_registry_repository.secure_api.name
   role       = "roles/artifactregistry.reader"
   member     = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
-}
-
-# Permissão para os nodes do GKE baixarem as imagens
-resource "google_artifact_registry_repository_iam_member" "gke_pull" {
-  project    = var.project_id
-  location   = var.region
-  repository = google_artifact_registry_repository.secure_api.name
-  role       = "roles/artifactregistry.reader"
-  member     = "serviceAccount:${module.gke.node_service_account}"
 }
 
 output "registry_url" {
