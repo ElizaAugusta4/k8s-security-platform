@@ -1,0 +1,95 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+
+  source:
+    repoURL: https://helm.releases.hashicorp.com
+    chart: vault
+    targetRevision: 0.29.1
+    helm:
+      values: |
+        server:
+          # Modo produção com Raft storage (persistente via PVC)
+          # e Auto Unseal via Cloud KMS
+          ha:
+            enabled: false
+
+          # Workload Identity — autentica no GCP sem chave JSON
+          serviceAccount:
+            annotations:
+              iam.gke.io/gcp-service-account: "vault-sa@k8s-security-platformm.iam.gserviceaccount.com"
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          # PVC para persistência dos dados
+          dataStorage:
+            enabled: true
+            size: 5Gi
+            storageClass: standard-rwo
+
+          # Configuração do Vault
+          standalone:
+            enabled: true
+            config: |
+              ui = true
+
+              listener "tcp" {
+                tls_disable = 1
+                address     = "[::]:8200"
+                cluster_address = "[::]:8201"
+              }
+
+              storage "raft" {
+                path = "/vault/data"
+                node_id = "vault-0"
+              }
+
+              # Auto Unseal via Cloud KMS
+              seal "gcpckms" {
+                project     = "k8s-security-platformm"
+                region      = "us-central1"
+                key_ring    = "vault-keyring"
+                crypto_key  = "vault-unseal-key"
+              }
+
+              api_addr     = "http://$(POD_IP):8200"
+              cluster_addr = "http://$(POD_IP):8201"
+
+        # UI habilitada
+        ui:
+          enabled: true
+          serviceType: ClusterIP
+
+        # Injector habilitado para injetar segredos nos pods
+        injector:
+          enabled: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
