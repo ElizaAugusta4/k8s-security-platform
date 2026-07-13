@@ -1,0 +1,63 @@
+# Certificados Let's Encrypt para todos os subdomínios do projeto
+# O cert-manager vai criar um Secret TLS para cada um
+# e renovar automaticamente antes de expirar
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana-tls
+  namespace: monitoring
+spec:
+  secretName: grafana-tls
+  duration: 2160h
+  renewBefore: 360h
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - grafana.elizaaugusta.uk
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-tls
+  namespace: argocd
+spec:
+  secretName: argocd-tls
+  duration: 2160h
+  renewBefore: 360h
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - argocd.elizaaugusta.uk
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-tls
+  namespace: vault
+spec:
+  secretName: vault-tls
+  duration: 2160h
+  renewBefore: 360h
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - vault.elizaaugusta.uk
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-tls
+  namespace: apps
+spec:
+  secretName: api-tls
+  duration: 2160h
+  renewBefore: 360h
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - api.elizaaugusta.uk
