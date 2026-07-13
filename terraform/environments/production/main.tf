@@ -66,13 +66,19 @@ output "vault_sa_email" {
   value = module.vault_kms.vault_sa_email
 }
 
-# Artifact Registry — armazena as imagens Docker do projeto
-resource "google_artifact_registry_repository" "secure_api" {
-  project       = var.project_id
-  location      = var.region
-  repository_id = "secure-api"
-  format        = "DOCKER"
-  description   = "Imagens Docker da secure-api"
+# Pega o número do projeto para construir o SA padrão dos nodes
+data "google_project" "project" {
+  project_id = var.project_id
+}
+
+# Permissão para os nodes do GKE baixarem as imagens
+# Nodes usam o SA padrão do Compute Engine
+resource "google_artifact_registry_repository_iam_member" "gke_pull" {
+  project    = var.project_id
+  location   = var.region
+  repository = google_artifact_registry_repository.secure_api.name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
 
 # Permissão para os nodes do GKE baixarem as imagens
