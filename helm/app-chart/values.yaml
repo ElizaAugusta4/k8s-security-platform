@@ -1,0 +1,53 @@
+name: secure-api
+image:
+  repository: us-central1-docker.pkg.dev/k8s-security-platformm/secure-api/secure-api
+  tag: v1.0.0
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+port: 8000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  host: api.elizaaugusta.uk
+  tls:
+    secretName: api-tls
+
+serviceAccount:
+  name: secure-api
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+
+autoscaling:
+  enabled: false
+
+vault:
+  enabled: true
+  role: secure-api
+  secrets:
+    - name: config
+      path: secret/data/secure-api/config
+      template: |
+        {{- with secret "secret/data/secure-api/config" -}}
+        APP_SECRET_KEY={{ .Data.data.app_secret_key }}
+        DB_PASSWORD={{ .Data.data.db_password }}
+        {{- end }}
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false

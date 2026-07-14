@@ -1,0 +1,5 @@
+apiVersion: v2
+name: app-chart
+description: Helm chart para aplicações do k8s-security-platform
+type: application
+version: 1.0.0
