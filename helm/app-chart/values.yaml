@@ -1,7 +1,7 @@
 name: secure-api
 image:
   repository: us-central1-docker.pkg.dev/k8s-security-platformm/secure-api/secure-api
-  tag: v1.0.0
+  tag: v1.0.1
   pullPolicy: IfNotPresent
 
 replicaCount: 2

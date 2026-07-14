@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 # SQLite para simplicidade no demo
 # Em produção: PostgreSQL via CloudSQL
-SQLALCHEMY_DATABASE_URL = "sqlite:///./secure_api.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/secure_api.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
